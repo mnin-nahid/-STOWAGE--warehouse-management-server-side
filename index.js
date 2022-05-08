@@ -28,19 +28,46 @@ async function run() {
             res.send(products);
         });
         //Single Product API
-        app.get('/product/:productid', async (req, res)=>{
+        app.get('/product/:productid', async (req, res) => {
             const productId = req.params.productid;
-            const query = {_id: ObjectId(productId)};
+            const query = { _id: ObjectId(productId) };
             const product = await productCollection.findOne(query);
             res.send(product);
         })
-    
+
         //POST API
         app.post('/product', async (req, res) => {
             const newProduct = req.body;
             const result = await productCollection.insertOne(newProduct);
             res.send(result);
         });
+
+        //update API
+        app.put('/product/:productid', async (req, res) => {
+            const id = req.params.productid;
+            const data = req.body.quantity;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    quantity: data,
+                },
+            };
+            const result = await productCollection.updateOne(filter, updateDoc, options);
+            console.log(req.body);
+            res.send(result);
+
+
+        });
+
+        //my items
+        app.get('/myitems/:email', async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const cursor = productCollection.find(filter);
+            const products = await cursor.toArray();
+            res.send(products);
+        })
 
         //Delete API
         app.delete('/product/:productid', async (req, res) => {
@@ -49,6 +76,7 @@ async function run() {
             const result = await productCollection.deleteOne(query);
             res.send(result);
         })
+
     }
     finally {
         //finall work!!
