@@ -36,12 +36,9 @@ async function run() {
         const productCollection = client.db('Inventorie').collection('products');
         const serviceCollection = client.db('Inventorie').collection('service');
 
-        //AUTH
+        //AUTH API
         app.post('/signin', async (req, res) => {
-            console.log(req.body);
-
             const user = req.body;
-            console.log(req.body);
             const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
                 expiresIn: '2d'
             })
@@ -90,7 +87,6 @@ async function run() {
         app.get('/myitems/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const decodedEmail = req.decoded.email;
-            console.log(req.body);
             // const filter = { email: email };
             if (email === decodedEmail) {
                 const query = { email: email };
