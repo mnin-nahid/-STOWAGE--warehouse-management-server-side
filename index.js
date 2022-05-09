@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
@@ -9,6 +10,21 @@ const app = express();
 //middleware
 app.use(cors());
 app.use(express.json());
+
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization || req.body.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send({ message: 'unauthorized access' })
+    }
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(403).send({ message: 'Forbiden access' });
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 
 
 const uri = `mongodb+srv://${process.env.USER_DB}:${process.env.PASS_DB}@cluster0.rxj83.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
@@ -20,7 +36,17 @@ async function run() {
         const productCollection = client.db('Inventorie').collection('products');
         const serviceCollection = client.db('Inventorie').collection('service');
 
+        //AUTH
+        app.post('/signin', async (req, res) => {
+            console.log(req.body);
 
+            const user = req.body;
+            console.log(req.body);
+            const accessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+                expiresIn: '2d'
+            })
+            res.send({ accessToken });
+        })
         //Products API
         app.get('/product', async (req, res) => {
             const query = {};
@@ -55,19 +81,26 @@ async function run() {
                 },
             };
             const result = await productCollection.updateOne(filter, updateDoc, options);
-            console.log(req.body);
             res.send(result);
 
 
         });
 
         //my items
-        app.get('/myitems/:email', async (req, res) => {
+        app.get('/myitems/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
-            const filter = { email: email };
-            const cursor = productCollection.find(filter);
-            const products = await cursor.toArray();
-            res.send(products);
+            const decodedEmail = req.decoded.email;
+            console.log(req.body);
+            // const filter = { email: email };
+            if (email === decodedEmail) {
+                const query = { email: email };
+                const cursor = productCollection.find(query);
+                const products = await cursor.toArray();
+                res.send(products);
+            }
+            else {
+                res.status(403).send({ message: 'forbiden access' })
+            }
         })
 
         //Delete API
@@ -84,7 +117,7 @@ async function run() {
             const cursor = serviceCollection.find(query);
             const service = await cursor.toArray();
             res.send(service);
-    })
+        })
 
     }
     finally {
