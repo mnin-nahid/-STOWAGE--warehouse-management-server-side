@@ -18,6 +18,7 @@ async function run() {
     try {
         await client.connect();
         const productCollection = client.db('Inventorie').collection('products');
+        const serviceCollection = client.db('Inventorie').collection('service');
 
 
         //Products API
@@ -76,6 +77,14 @@ async function run() {
             const result = await productCollection.deleteOne(query);
             res.send(result);
         })
+
+        //service api
+        app.get('/service', async (req, res) => {
+            const query = {};
+            const cursor = serviceCollection.find(query);
+            const service = await cursor.toArray();
+            res.send(service);
+    })
 
     }
     finally {
