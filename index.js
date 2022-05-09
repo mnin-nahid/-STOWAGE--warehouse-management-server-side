@@ -133,6 +133,9 @@ run().catch(console.dir);
 app.get('/', (req, res) => {
     res.send('server is running...');
 });
+app.get('/test', (req, res) => {
+    res.send('server is running...teessstt');
+});
 
 
 
